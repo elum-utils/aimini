@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+
+# Local integration tests and assets. Keep API URLs, tokens, and photos out of git.
+integration_local_test.go
+*_local_integration_test.go
+*.local.jpg
+*.local.jpeg
+*.local.png
+2026-04-29 23.31.42.jpg
