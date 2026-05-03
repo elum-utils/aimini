@@ -23,7 +23,7 @@ if err != nil {
 	return err
 }
 
-item, err := client.Queue.Add(ctx, &aimini.AddQueueItemRequest{
+addResp, err := client.Queue.Add(ctx, &aimini.AddQueueItemRequest{
 	Image:   aimini.ImageFromFile("/path/to/photo.jpg"),
 	UserID:  "123456789",
 	NodeID:  "987654321",
@@ -33,7 +33,8 @@ if err != nil {
 	return err
 }
 
-_ = item.ID
+_ = addResp.Item.ID
+_ = addResp.QueueSize
 ```
 
 ## Model-style API

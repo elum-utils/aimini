@@ -31,7 +31,7 @@ func TestGenerateContentQueuesAndPollsProcessedItem(t *testing.T) {
 				t.Fatalf("prompts = %q", r.FormValue("prompts"))
 			}
 			w.WriteHeader(http.StatusCreated)
-			_, _ = w.Write([]byte(`{"id":"item-1","status":"queued"}`))
+			_, _ = w.Write([]byte(`{"item":{"id":"item-1","status":"queued","created_at":"2026-05-03T00:00:00Z","updated_at":"2026-05-03T00:00:00Z"},"queue_size":1}`))
 		case "/queue.list":
 			var req ListQueueItemsRequest
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -79,7 +79,7 @@ func TestGenerateContentCanDeleteAfterResult(t *testing.T) {
 		case "/queue.add":
 			_, _ = io.Copy(io.Discard, r.Body)
 			w.WriteHeader(http.StatusCreated)
-			_, _ = w.Write([]byte(`{"id":"item-1","status":"queued"}`))
+			_, _ = w.Write([]byte(`{"item":{"id":"item-1","status":"queued","created_at":"2026-05-03T00:00:00Z","updated_at":"2026-05-03T00:00:00Z"},"queue_size":1}`))
 		case "/queue.list":
 			_, _ = w.Write([]byte(`[{"id":"item-1","status":"processed","output_s3_url":"https://cdn/result.png"}]`))
 		case "/queue.delete":

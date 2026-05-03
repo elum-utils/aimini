@@ -74,12 +74,12 @@ func TestQueueAddSendsMultipartRequest(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"id":"item-1","user_id":"user-1","node_id":"node-1","prompts":["prompt one","prompt two"],"status":"queued"}`))
+		_, _ = w.Write([]byte(`{"item":{"id":"item-1","user_id":"user-1","node_id":"node-1","prompts":["prompt one","prompt two"],"status":"queued","created_at":"2026-05-03T00:00:00Z","updated_at":"2026-05-03T00:00:00Z"},"queue_size":7}`))
 	}))
 	t.Cleanup(server.Close)
 
 	client := newTestClient(t, server.URL)
-	item, err := client.Queue.Add(context.Background(), &AddQueueItemRequest{
+	addResp, err := client.Queue.Add(context.Background(), &AddQueueItemRequest{
 		Image:          ImageFromBytes([]byte("fake-jpeg"), "input.jpg", ""),
 		UserID:         "user-1",
 		NodeID:         "node-1",
@@ -89,8 +89,32 @@ func TestQueueAddSendsMultipartRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Add returned error: %v", err)
 	}
-	if item.ID != "item-1" || item.Status != StatusQueued {
-		t.Fatalf("unexpected item: %+v", item)
+	if addResp.Item.ID != "item-1" || addResp.Item.Status != StatusQueued || addResp.QueueSize != 7 {
+		t.Fatalf("unexpected add response: %+v", addResp)
+	}
+}
+
+func TestQueueAddAcceptsLegacyItemResponse(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"id":"item-legacy","status":"queued","created_at":"2026-05-03T00:00:00Z","updated_at":"2026-05-03T00:00:00Z"}`))
+	}))
+	t.Cleanup(server.Close)
+
+	client := newTestClient(t, server.URL)
+	addResp, err := client.Queue.Add(context.Background(), &AddQueueItemRequest{
+		Image:   ImageFromBytes([]byte("fake-jpeg"), "input.jpg", ""),
+		UserID:  "user-1",
+		NodeID:  "node-1",
+		Prompts: []string{"prompt"},
+	})
+	if err != nil {
+		t.Fatalf("Add returned error: %v", err)
+	}
+	if addResp.Item.ID != "item-legacy" {
+		t.Fatalf("legacy item id = %q", addResp.Item.ID)
 	}
 }
 
@@ -149,7 +173,7 @@ func TestQueueDeleteTreats404AsSuccess(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := newTestClient(t, server.URL)
-	if err := client.Queue.Delete(context.Background(), &DeleteQueueItemRequest{ID: "item-1"}); err != nil {
+	if _, err := client.Queue.Delete(context.Background(), &DeleteQueueItemRequest{ID: "item-1"}); err != nil {
 		t.Fatalf("Delete returned error: %v", err)
 	}
 }

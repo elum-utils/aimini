@@ -83,7 +83,7 @@ func (s *ModelsService) GenerateContent(ctx context.Context, _ string, contents 
 		return nil, err
 	}
 
-	item, err := s.client.Queue.Add(ctx, &AddQueueItemRequest{
+	addResp, err := s.client.Queue.Add(ctx, &AddQueueItemRequest{
 		Image:          image,
 		UserID:         userID,
 		NodeID:         nodeID,
@@ -94,7 +94,7 @@ func (s *ModelsService) GenerateContent(ctx context.Context, _ string, contents 
 		return nil, err
 	}
 
-	processed, err := s.WaitForResult(ctx, item.ID, &WaitForResultOptions{
+	processed, err := s.WaitForResult(ctx, addResp.Item.ID, &WaitForResultOptions{
 		NodeID:       nodeID,
 		PollInterval: config.PollInterval,
 		ListLimit:    config.ListLimit,
@@ -104,7 +104,7 @@ func (s *ModelsService) GenerateContent(ctx context.Context, _ string, contents 
 	}
 
 	if config.DeleteAfter {
-		if err := s.client.Queue.Delete(ctx, &DeleteQueueItemRequest{ID: processed.ID}); err != nil {
+		if _, err := s.client.Queue.Delete(ctx, &DeleteQueueItemRequest{ID: processed.ID}); err != nil {
 			return nil, err
 		}
 	}
@@ -166,11 +166,11 @@ func (s *ModelsService) WaitForResult(ctx context.Context, id string, options *W
 			return nil, err
 		}
 		for _, item := range items {
-			if item != nil && item.ID == id {
+			if item.ID == id {
 				if item.OutputS3URL == "" {
 					return nil, fmt.Errorf("aimini: processed item %q has empty output url", id)
 				}
-				return item, nil
+				return &item, nil
 			}
 		}
 
